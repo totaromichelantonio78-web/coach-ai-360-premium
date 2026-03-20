@@ -1,353 +1,248 @@
 import streamlit as st
-import pandas as pd
 import datetime
 import random
 
 # ==========================================
-# 1. CONFIGURAZIONE MOBILE-FIRST HIGH-END
+# 1. CONFIGURAZIONE MOBILE PREMIUM
 # ==========================================
-st.set_page_config(
-    page_title="Coach AI 360",
-    page_icon="🤖",
-    layout="centered", # Necessario per centraggio mobile
-    initial_sidebar_state="collapsed"
-)
+st.set_page_config(page_title="Coach AI 360", page_icon="🤖", layout="centered", initial_sidebar_state="collapsed")
 
-# Inizializzazione Session State Avanzata
+# Inizializzazione Session State
+if 'api_key' not in st.session_state: st.session_state.api_key = None
 if 'onboarded' not in st.session_state: st.session_state.onboarded = False
-if 'page' not in st.session_state: st.session_state.page = 'dashboard'
+if 'page' not in st.session_state: st.session_state.page = 'home'
 if 'user_data' not in st.session_state: st.session_state.user_data = {}
-if 'gemini_open' not in st.session_state: st.session_state.gemini_open = False
-if 'health_score' not in st.session_state: st.session_state.health_score = random.randint(60, 95)
-if 'pasti_inseriti' not in st.session_state: st.session_state.pasti_inseriti = {'colazione': False, 'pranzo': False, 'cena': False}
-
-# Dati Storici Simulati per l'Ufficio Coach
-if 'pesi_storico' not in st.session_state: 
-    st.session_state.pesi_storico = pd.DataFrame({'Data': [datetime.date.today() - datetime.timedelta(days=7)], 'Peso kg': [75.2]})
+if 'health_score' not in st.session_state: st.session_state.health_score = random.randint(70, 95)
+if 'peso_attuale' not in st.session_state: st.session_state.peso_attuale = 0.0
 
 # ==========================================
-# 2. ADVANCED CSS INJECTION (The "Beautiful" Part)
+# 2. INIEZIONE CSS AVANZATO (Dark Mode Pura & Animazioni)
 # ==========================================
-# Questo CSS forza Streamlit a sembrare un'app nativa Premium (One UI / iOS inspired)
-st.markdown("""
+# Dinamico: blocca lo scorrimento solo se siamo nella Home
+scroll_css = "overflow: hidden;" if st.session_state.page == 'home' else "overflow: auto; padding-bottom: 120px;"
+
+st.markdown(f"""
     <style>
-    /* Reset & Mobile Viewport Constraint (Forza formato telefono su PC) */
-    [data-testid="stAppViewContainer"] {
-        max-width: 420px;
-        margin: 0 auto;
-        background-color: #000000; /* Dark Mode di base */
-        overflow: hidden; /* Niente scorrimento in home */
-    }
-    .stAppHeader { display: none !important; }
-    .block-container { padding: 15px !important; }
-
-    /* --- PREMIUM DARK MODE & TYPOGRAPHY --- */
-    h1, h2, h3, h4, p, span, label { 
-        color: #FFFFFF !important; 
-        font-family: '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Helvetica Neue', 'Roboto', sans-serif !important; 
-    }
-    .stMarkdown p { color: #CCCCCC !important; font-size: 14px; }
+    /* Forza layout Mobile-First */
+    [data-testid="stAppViewContainer"] {{
+        max-width: 420px; margin: 0 auto;
+        background-color: #000000; /* Nero OLED profondo */
+        {scroll_css}
+    }}
+    .stAppHeader {{ display: none !important; }}
     
-    /* Input Fields Moderni (Dark) */
-    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div {
-        background-color: #1A1A1A !important;
-        border: 1px solid #333333 !important;
-        border-radius: 12px !important;
-        color: white !important;
-    }
-
-    /* --- CARD 2x2 HOME: EFFETTO PRESSIONE MORBIDA (One UI Style) --- */
-    /* Modifichiamo il comportamento dei bottoni standard di streamlit per farli sembrare card interattive */
-    div.stButton > button {
-        width: 100% !important;
-        height: 140px !important;
-        border-radius: 24px !important;
-        border: none !important;
-        background: linear-gradient(135deg, #1A1A1A, #111111) !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.5) !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; /* Animazione morbida linear-out */
-        display: flex; flex-direction: column; align-items: start; justify-content: start;
-        padding: 20px !important;
-        color: white !important;
-        font-weight: 700 !important; font-size: 18px !important; text-align: left !important;
-    }
-    /* Effetto 'pressione' premium al tocco */
-    div.stButton > button:active {
-        transform: scale(0.96) !important; /* Leggera contrazione */
-        background: linear-gradient(135deg, #111111, #080808) !important;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.8) !important;
-    }
-    /* Sotto-testo grigio dentro la card */
-    div.stButton > button span { color: #999999 !important; font-weight: 400 !important; font-size: 12px !important; }
-
-    /* --- INFO CARDS (Salutari & Salute) --- */
-    .info-card {
-        background-color: #1A1A1A; border-radius: 20px; padding: 15px;
-        margin-bottom: 15px; border: 1px solid #2A2A2A;
-    }
+    /* Tipografia Pulita (Font di sistema) */
+    * {{ font-family: '-apple-system', 'BlinkMacSystemFont', 'SF Pro Text', 'Helvetica Neue', sans-serif !important; color: #FFFFFF !important; }}
+    p, span {{ color: #CCCCCC !important; font-size: 14px; }}
     
-    /* Mini-Grafico Macro Interattivo (Pillole) */
-    .macro-container { display: flex; gap: 8px; margin-top: 10px; }
-    .macro-pill { flex: 1; height: 6px; border-radius: 3px; background-color: #333; overflow: hidden; }
-    .macro-progress { height: 100%; border-radius: 3px; }
+    /* Nasconde elementi superflui Streamlit */
+    footer {{ display: none !important; }}
 
-    /* --- FLOATING ELEMENTS & ANIMATIONS --- */
-    
-    /* 1. Tasto Coach Tondo Gradiente Animato (One UI Search/Gemini style) */
-    .fab-coach {
-        position: fixed; bottom: 100px; right: 20px;
-        width: 65px; height: 65px; border-radius: 50%;
-        background: linear-gradient(135deg, #007AFF, #00C7FF, #007AFF);
-        background-size: 200% 200%;
-        animation: geminiGradient 4s ease infinite;
-        box-shadow: 0 8px 25px rgba(0,122,255,0.5);
-        display: flex; align-items: center; justify-content: center;
-        z-index: 1001; cursor: pointer; border: none;
-        transition: transform 0.2s;
-    }
-    .fab-coach:active { transform: scale(0.9); }
-    
-    /* 2. Floating Navigation Bar (Pillola sospesa iOS/Pixel Style) */
-    .nav-bar-floating {
-        position: fixed; bottom: 25px; left: 50%; transform: translateX(-50%);
-        width: 90%; max-width: 380px;
-        background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(15px); /* Trasparenza blur */
-        display: flex; justify-content: space-around; align-items: center;
-        padding: 18px; border-radius: 35px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.3); z-index: 1000;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-    .nav-item { font-size: 26px; color: #666 !important; cursor: pointer; transition: 0.2s; }
-    .nav-item:hover { color: #007AFF !important; transform: translateY(-3px); }
-    .nav-item.active { color: #007AFF !important; }
+    /* Stile Input (Dark Premium) */
+    .stTextInput>div>div>input, .stTextArea>div>div>textarea, .stSelectbox>div>div>div, .stNumberInput>div>div>input {{
+        background-color: #1C1C1E !important; border: 1px solid #2C2C2E !important; border-radius: 12px !important; color: white !important;
+    }}
 
-    /* --- ANIMAZIONI --- */
-    @keyframes geminiGradient {
-        0% { background-position: 0% 50%; }
-        50% { background-position: 100% 50%; }
-        100% { background-position: 0% 50%; }
-    }
-    @keyframes geminiOverlayIn {
-        from { opacity: 0; transform: translateY(100px) scale(0.8); }
-        to { opacity: 1; transform: translateY(0) scale(1); }
-    }
+    /* BOTTONI E CARD (Effetto aptico morbido) */
+    div.stButton > button {{
+        background-color: #1C1C1E !important; border: 1px solid #2C2C2E !important; border-radius: 20px !important;
+        padding: 15px !important; font-weight: 600 !important; font-size: 16px !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        width: 100% !important; text-align: left !important; display: block !important;
+    }}
+    div.stButton > button:active {{
+        transform: scale(0.95) !important; background-color: #2C2C2E !important;
+    }}
     
-    /* Overlay Chat Coach (Gemini Animation) */
-    .gemini-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(0,0,0,0.85); z-index: 2000;
-        display: flex; flex-direction: column; padding: 20px;
-        animation: geminiOverlayIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        backdrop-filter: blur(10px);
-    }
+    /* Card 2x2 Altezza Fissa */
+    .card-2x2 div.stButton > button {{ height: 130px !important; align-items: flex-start !important; }}
 
-    /* Container per layout fisso no-scroll */
-    .fixed-viewport {
-        height: 100vh; display: flex; flex-direction: column;
-        justify-content: start; padding-bottom: 180px; /* Padding per floating elements */
-    }
+    /* Freccia Indietro Minimal */
+    .back-btn div.stButton > button {{
+        background: transparent !important; border: none !important; color: #007AFF !important;
+        font-size: 18px !important; padding: 0 !important; width: auto !important; height: auto !important; margin-bottom: 15px;
+    }}
+
+    /* FLOATING NAV BAR (Solo schede interne) */
+    .nav-bar-floating {{
+        position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); width: 85%; max-width: 360px;
+        background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        display: flex; justify-content: space-around; align-items: center; padding: 15px; border-radius: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.5); z-index: 1000; border: 1px solid rgba(255,255,255,0.1);
+    }}
+    .nav-item {{ font-size: 24px; text-decoration: none; cursor: pointer; transition: 0.2s; }}
+    
+    /* FAB COACH (Sempre presente in basso a destra) */
+    .fab-coach {{
+        position: fixed; bottom: 110px; right: 20px; width: 60px; height: 60px; border-radius: 30px;
+        background: linear-gradient(135deg, #007AFF, #00C7FF); box-shadow: 0 8px 25px rgba(0,122,255,0.4);
+        display: flex; align-items: center; justify-content: center; z-index: 1001; cursor: pointer; border: none; font-size: 26px;
+    }}
+    .fab-coach:active {{ transform: scale(0.9); }}
     </style>
-    """, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
+
 
 # ==========================================
-# 3. HELPER FUNCTIONS (Logica IA)
+# 3. HELPER FUNCTIONS
 # ==========================================
+def change_page(new_page):
+    st.session_state.page = new_page
 
-def get_dynamic_greeting():
-    """Genera header motivazionale basato sull'ora e lo stato"""
-    hour = datetime.datetime.now().hour
-    score = st.session_state.health_score
+def back_button():
+    st.markdown('<div class="back-btn">', unsafe_allow_html=True)
+    if st.button("← Indietro"): change_page('home')
+    st.markdown('</div>', unsafe_allow_html=True)
+
+
+# ==========================================
+# FASE 1: INSERIMENTO CHIAVE IA (API KEY)
+# ==========================================
+if not st.session_state.api_key:
+    st.title("🤖 Coach AI 360")
+    st.markdown("### Benvenuto! Attiva il tuo Coach.")
+    st.write("Per darti consigli reali e leggere le tue schede, il Coach ha bisogno della tua Chiave IA gratuita (Google Gemini).")
     
-    if hour < 12: greet = "Buongiorno, Mich! ☀️"
-    elif hour < 18: greet = "Buon pomeriggio, Mich! 🦾"
-    else: greet = "Buonasera, Mich! 🌕"
+    st.markdown("""
+    **Come ottenerla (30 secondi):**
+    1. Clicca il link qui sotto.
+    2. Accedi con Google e premi *Create API Key*.
+    3. Copia il codice lungo e incollalo qui.
+    """)
+    st.markdown("[👉 Clicca qui per prendere la tua Chiave Gratis](https://aistudio.google.com/app/apikey)", unsafe_allow_html=True)
     
-    # Logica Tirata d'orecchio / Congratulazioni
-    if score > 85:
-        msg = "Oggi sei una macchina! Tutti i parametri sono eccellenti. Continua così!"
-    elif score < 70:
-        msg = "Tirata d'orecchio! 🤨 Oggi ti vedo stanco e l'idratazione è bassa. Recuperiamo!"
-    else:
-        msg = "Situazione stabile. Ottimo l'allenamento di ieri, oggi focalizzati sull'alimentazione."
-        
-    return greet, msg
-
-def get_dynamic_diet_status():
-    """Ritorna lo stato dinamico della card alimentazione basato sull'ora"""
-    hour = datetime.datetime.now().hour
-    pasti = st.session_state.pasti_inseriti
+    key_input = st.text_input("Incolla la tua Chiave (API Key) qui:", type="password")
     
-    if hour < 10:
-        if pasti['colazione']: return "Colazione registrata ✅", "#4CD964"
-        return "⏰ Inserisci Colazione", "#FFCC00"
-    elif hour < 15:
-        if pasti['pranzo']: return "Pranzo registrato ✅", "#4CD964"
-        return "⏰ Aggiungi Pranzo", "#FFCC00"
-    else:
-        if pasti['cena']: return "Cena registrata ✅", "#4CD964"
-        return "⏰ Decidiamo la Cena?", "#FFCC00"
-
-def get_lifestyle_color():
-    """Ritorna un colore tenue (glow) basato sullo health score"""
-    score = st.session_state.health_score
-    if score > 85: return "rgba(76, 217, 100, 0.15)" # Verde tenue
-    if score > 70: return "rgba(255, 204, 0, 0.1)"  # Giallo tenue
-    return "rgba(255, 59, 48, 0.1)" # Rosso tenue
-
-# ==========================================
-# 4. GESTIONE NAVIGAZIONE & PAGINE
-# ==========================================
-
-# Container principale fisso
-app_container = st.container()
-
-# --- A. DETAILED ONBOARDING (Questionario Deep Dive) ---
-if not st.session_state.onboarded:
-    with app_container:
-        st.title("🤖 Ciao Michelantonio!")
-        st.subheader("Configuriamo il tuo Coach IA 360")
-        st.write("Crea il tuo profilo perfetto in 3 step. Più dettagli fornisci, più sarò preciso.")
-        
-        with st.form("deep_onboarding"):
-            # Step 1: Obiettivi & Frequenza
-            st.markdown("#### 🎯 Step 1: Obiettivi")
-            obiettivo = st.selectbox("Cosa vogliamo ottenere?", ["Ricomposizione Corporea", "Massa Muscolare", "Definizione Estrema", "Forza"])
-            infortuni = st.text_area("Hai infortuni, fastidi o allergie alimentari? (es. spalla dx, celiachia)", height=70)
-            frequenza = st.selectbox("Quanto spesso ti alleni?", ["3 volte (Lun-Mer-Ven)", "4 volte", "5 volte", "Creiamo noi un piano?"])
-            
-            # Step 2: Alimentazione (Upload + Note Cena)
-            st.markdown("---")
-            st.markdown("#### 🍎 Step 2: Alimentazione")
-            dieta_file = st.file_uploader("Carica Dieta Nutrizionista (PDF/Foto)", type=['png', 'jpg', 'pdf'])
-            dieta_note = st.text_area("Note Alimentazione (es. 'Cena non inclusa, la decidiamo ogni giorno')", height=70, placeholder="Non hai una dieta? Scrivi qui come mangi.")
-            
-            # Step 3: Allenamento (Multi-file + Note Giorni)
-            st.markdown("---")
-            st.markdown("#### 🔥 Step 3: Allenamento")
-            scheda_file = st.file_uploader("Carica Foto Scheda (Multi-file)", accept_multiple_files=True, type=['png', 'jpg', 'pdf'])
-            scheda_note = st.text_area("Note Allenamento (es. 'Mi alleno i giorni dispari, oggi Petto')", height=70, placeholder="Non hai una scheda? Scrivi qui cosa vuoi fare.")
-            
-            submit = st.form_submit_button("🚀 Avvia il mio Coach AI Premium", use_container_width=True)
-            if submit:
-                # Salvataggio Dati (In produzione andrebbero su DB)
-                st.session_state.user_data = {
-                    'obiettivo': obiettivo, 'infortuni': infortuni, 'frequenza': frequenza,
-                    'dieta_file': dieta_file, 'dieta_note': dieta_note,
-                    'scheda_file': scheda_file, 'scheda_note': scheda_note
-                }
-                st.session_state.onboarded = True
-                st.rerun()
-
-# --- B. APP REALE (Dashboard & Sezioni) ---
-else:
-    # 1. FLOATING ELEMENTS (Sempre visibili sopra il contenuto)
-    # Tasto Coach Gemini (con logica click)
-    st.markdown('<button class="fab-coach" onclick="alert(\'Apertura Overlay Gemini...\')">💬</button>', unsafe_allow_html=True)
-    # Floating Nav Bar (iOS Style)
-    active_dash = "active" if st.session_state.page == 'dashboard' else ""
-    st.markdown(f"""
-        <div class="nav-bar-floating">
-            <span class="nav-item {active_dash}">🏠</span>
-            <span class="nav-item">🏋️‍♂️</span>
-            <span class="nav-item">🍎</span>
-            <span class="nav-item">📈</span>
-            <span class="nav-item">🏢</span>
-        </div>
-        """, unsafe_allow_html=True)
-
-    # 2. CHAT OVERLAY (Simulazione Gemini)
-    if st.session_state.gemini_open:
-        st.markdown('<div class="gemini-overlay">', unsafe_allow_html=True)
-        st.subheader("🤖 Coach IA (Gemini)")
-        if st.button("❌ Chiudi", use_container_width=True):
-            st.session_state.gemini_open = False
+    if st.button("🔐 Attiva il Coach e Salva"):
+        if len(key_input) > 10:
+            st.session_state.api_key = key_input
+            st.success("Chiave validata e salvata su Drive (simulato)!")
             st.rerun()
-        st.write("Sto ascoltando... Prova a mandare un audio:")
-        st.audio_input("Messaggio Vocale al Coach")
-        st.chat_input("Scrivi qui...")
+        else:
+            st.error("Inserisci una chiave valida.")
+
+# ==========================================
+# FASE 2: ONBOARDING PROFONDO
+# ==========================================
+elif not st.session_state.onboarded:
+    st.title("🎯 Profilazione")
+    st.write("Configuriamo il tuo punto di partenza.")
+    
+    with st.form("onboarding_form"):
+        col1, col2 = st.columns(2)
+        with col1:
+            peso = st.number_input("Peso (kg):", min_value=30.0, max_value=200.0, value=75.0)
+        with col2:
+            altezza = st.number_input("Altezza (cm):", min_value=100, max_value=230, value=175)
+            
+        corporatura = st.selectbox("Corporatura:", ["Ectomorfo (Magro, fa fatica a crescere)", "Mesomorfo (Atletico, cresce bene)", "Endomorfo (Robusto, accumula facile)"])
+        obiettivo = st.selectbox("Obiettivo Principale:", ["Massa Muscolare", "Definizione", "Ricomposizione Corporea", "Forza"])
+        
+        st.markdown("---")
+        st.write("Caricamento Documenti (Opzionale, puoi farlo dopo)")
+        scheda = st.file_uploader("Scheda Allenamento (Foto/PDF)", accept_multiple_files=True)
+        dieta = st.file_uploader("Dieta Nutrizionista (Foto/PDF)")
+        note = st.text_area("Note o Infortuni:")
+        
+        if st.form_submit_button("🚀 Inizia la Trasformazione"):
+            st.session_state.user_data = {'peso': peso, 'altezza': altezza, 'corp': corporatura, 'obiettivo': obiettivo}
+            st.session_state.peso_attuale = peso
+            st.session_state.onboarded = True
+            st.rerun()
+
+# ==========================================
+# FASE 3: APP PRINCIPALE
+# ==========================================
+else:
+    # --- FAB COACH (Sempre visibile) ---
+    st.markdown('<button class="fab-coach" onclick="alert(\'Apertura IA in overlay...\')">💬</button>', unsafe_allow_html=True)
+
+    # --- PAGINA HOME (No Scroll) ---
+    if st.session_state.page == 'home':
+        # Messaggio Motivazionale
+        ora = datetime.datetime.now().hour
+        saluto = "Buongiorno" if ora < 12 else "Buon pomeriggio" if ora < 18 else "Buonasera"
+        st.markdown(f"### {saluto}, Mich! 🦾")
+        st.markdown('<div style="background-color: #1C1C1E; padding: 15px; border-radius: 15px; border-left: 3px solid #007AFF; margin-bottom: 20px;"><p style="margin:0;">🤖 <b>Coach:</b> Ottimo lavoro ieri. Hai dormito bene, oggi spingi forte sull\'allenamento!</p></div>', unsafe_allow_html=True)
+        
+        # Widgets Salute e Macro
+        colA, colB = st.columns(2)
+        with colA:
+            st.markdown('<div style="background-color: #1C1C1E; padding: 15px; border-radius: 15px; border: 1px solid #2C2C2E; height: 110px;">'
+                        '<h4 style="margin:0; font-size: 15px;">⌚ Salute</h4>'
+                        '<p style="margin:5px 0;">👣 7.240 passi</p>'
+                        '<p style="margin:0;">💤 7h 15m</p></div>', unsafe_allow_html=True)
+        with colB:
+            # Bottone che simula la card cliccabile
+            if st.button("🍎 Macro di Oggi\n2500 kcal (Dettagli)"): change_page('macro')
+
+        # Griglia 2x2 (Card Pulite con effetto aptico)
+        st.markdown("#### Le tue Aree")
+        st.markdown('<div class="card-2x2">', unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("🔥 Allenamento\n\nOggi: Petto/Tricipiti"): change_page('allenamento')
+            if st.button("🧬 Lifestyle\n\nPeso: {} kg".format(st.session_state.peso_attuale)): change_page('lifestyle')
+        with c2:
+            if st.button("🍎 Dieta\n\nPranzo da inserire"): change_page('dieta')
+            if st.button("🏢 Ufficio Coach\n\nReport e Analisi"): change_page('ufficio')
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # 3. PAGINE CONTENT
-    with app_container:
-        st.markdown('<div class="fixed-viewport">', unsafe_allow_html=True)
+    # --- SCHEDE INTERNE (Scorrimento Sbloccato + Tasto Indietro) ---
+    
+    elif st.session_state.page == 'allenamento':
+        back_button()
+        st.title("🔥 Allenamento")
+        st.write("Qui ci sarà la tua scheda dinamica. Scorri per vedere gli esercizi.")
+        for i in range(1, 6):
+            st.markdown(f'<div style="background-color: #1C1C1E; padding: 15px; border-radius: 15px; margin-bottom: 10px;"><h3>Esercizio {i}</h3><p>4 serie x 10 ripetizioni</p></div>', unsafe_allow_html=True)
 
-        # ----------------------------------
-        # --- PAGINA: DASHBOARD (Home) ---
-        # ----------------------------------
-        if st.session_state.page == 'dashboard':
-            # Header Motivazionale Dinamico
-            greet, msg_coach = get_dynamic_greeting()
-            st.markdown(f"### {greet}")
-            st.markdown(f"""
-                <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 15px; border-left: 3px solid #007AFF; margin-bottom: 15px;">
-                    🤖 <b>Coach AI:</b> <span style="font-weight: 300; font-size:14px;">{msg_coach}</span>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            # Notifica Pesata Settimanale (Simulata)
-            if datetime.datetime.now().weekday() == 5: # Sabato
-                st.warning("⚖️ Notifica: Pesata settimanale del Sabato mattina alle 8:00 inserita.")
+    elif st.session_state.page == 'dieta':
+        back_button()
+        st.title("🍎 Dieta")
+        st.write("Piano alimentare di oggi.")
+        st.success("Colazione: Completata")
+        st.warning("Pranzo: Da inserire")
 
-            # Row 1: Widget Salute & Macro (Simulati Apple Health/Fit)
-            col_health, col_macro = st.columns([1, 1.2])
-            with col_health:
-                st.markdown(f"""
-                    <div class="info-card" style="height: 125px;">
-                        <h4 style="margin:0; font-size: 16px;">⌚ Salute</h4>
-                        <p style="margin:5px 0;">👣 <b>7.240</b> passi</p>
-                        <p style="margin:0;">💤 <b>7h 15m</b> (Buono)</p>
-                    </div>
-                """, unsafe_allow_html=True)
+    elif st.session_state.page == 'lifestyle':
+        back_button()
+        st.title("🧬 Lifestyle")
+        st.write("Monitoraggio parametri e bilancia.")
+        
+        # INSERIMENTO MANUALE PESO
+        st.markdown("### ⚖️ Bilancia")
+        nuovo_peso = st.number_input("Inserisci il tuo peso di oggi (kg):", value=st.session_state.peso_attuale, step=0.1)
+        if st.button("💾 Salva Pesata"):
+            st.session_state.peso_attuale = nuovo_peso
+            st.success("Peso salvato nel database!")
             
-            with col_macro:
-                # Cliccando la card macro si va al dettaglio alimentazione
-                if st.button("🍎 Macro di Oggi", help="Vedi Dettaglio", use_container_width=True):
-                    st.toast("Apertura Dettaglio Alimentazione...")
-                st.markdown("""
-                    <div class="macro-container" style="margin-top: -10px; margin-bottom: 15px; padding: 0 10px;">
-                        <div class="macro-pill"><div class="macro-progress" style="width: 22%; background:#007AFF;"></div></div>
-                        <div class="macro-pill"><div class="macro-progress" style="width: 30%; background:#FF3B30;"></div></div>
-                        <div class="macro-pill"><div class="macro-progress" style="width: 15%; background:#4CD964;"></div></div>
-                    </div>
-                """, unsafe_allow_html=True)
+        st.markdown("### ⌚ Dati Apple Salute / Fit")
+        st.info("Sincronizzazione automatica attiva in background.")
 
-            # Row 2: LE 4 CARD 2x2 (PREMIUM INTERACTIVE)
-            st.markdown("#### Le tue Aree")
-            c1, c2 = st.columns(2)
-            
-            # Card 🔥 ALLENAMENTO (Dinamica su Frequenza)
-            with c1:
-                if st.button(f"🔥\nAllenamento\n<span>Oggi: Petto/Tricipiti ({st.session_state.user_data.get('frequenza', '')})</span>", use_container_width=True):
-                    st.session_state.page = 'allenamento'; st.rerun()
-            
-            # Card 🍎 DIETA (Dinamica su Ora)
-            diet_status, diet_color = get_dynamic_diet_status()
-            with c2:
-                if st.button(f"🍎\nDieta\n<span style='color:{diet_color} !important; font-weight:700;'>{diet_status}</span>", use_container_width=True):
-                    st.session_state.page = 'dieta'; st.rerun()
-            
-            c3, c4 = st.columns(2)
-            
-            # Card 🧬 LIFESTYLE (Dinamica su Health Score + Glow)
-            ls_glow = get_lifestyle_color()
-            with c3:
-                # Iniettiamo CSS specifico per il glow di questa card
-                st.markdown(f"<style>div.stButton > button:contains('Lifestyle') {{ background: linear-gradient(135deg, {ls_glow}, #111) !important; border: 1px solid {ls_glow.replace('0.1', '0.3')} !important; }}</style>", unsafe_allow_html=True)
-                if st.button(f"🧬\nLifestyle\n<span>Smart Scale: {st.session_state.pesi_storico.iloc[-1]['Peso kg']}kg (Score: {st.session_state.health_score})</span>", use_container_width=True):
-                    st.session_state.page = 'lifestyle'; st.rerun()
-            
-            # Card 🏢 UFFICIO COACH
-            with c4:
-                if st.button(f"🏢\nUfficio Coach\n<span>Analisi & Suggerimenti settimanali</span>", use_container_width=True):
-                    st.session_state.page = 'ufficio'; st.rerun()
+    elif st.session_state.page == 'macro':
+        back_button()
+        st.title("📊 Dettaglio Macro")
+        st.write("Andamento giornaliero in stile Premium.")
+        st.progress(0.7, text="Calorie: 1800 / 2500 kcal")
+        st.progress(0.8, text="Proteine: 120 / 150 g")
+        st.progress(0.4, text="Grassi: 30 / 70 g")
+        st.progress(0.6, text="Carboidrati: 180 / 300 g")
 
-        # ----------------------------------
-        # --- ALTRE PAGINE (Temporary Placeholder) ---
-        # ----------------------------------
-        else:
-            if st.button("⬅️ Torna alla Home", use_container_width=True):
-                st.session_state.page = 'dashboard'; st.rerun()
-            st.title(f"Sezione {st.session_state.page.upper()}")
-            st.write("Qui caricheremo le funzionalità dettagliate (es. conta calorie dettagliato, storico pesi smart scale, esercizi, ecc.) nelle prossime fasi.")
+    elif st.session_state.page == 'ufficio':
+        back_button()
+        st.title("🏢 Ufficio Coach")
+        st.write("Centro di controllo e report settimanale.")
+        st.markdown('<div style="background-color: #1C1C1E; padding: 15px; border-radius: 15px; border-left: 3px solid #007AFF;">'
+                    '🤖 <b>Analisi IA:</b> Settimana eccellente. L\'aumento di peso sulla panca conferma che siamo in surplus controllato. Continua così.'
+                    '</div>', unsafe_allow_html=True)
 
-        st.markdown('</div>', unsafe_allow_html=True) # Chiusura viewport
+    # --- BARRA DI NAVIGAZIONE INFERIORE (Solo se non sei in Home) ---
+    if st.session_state.page != 'home':
+        st.markdown("""
+            <div class="nav-bar-floating">
+                <span class="nav-item" onclick="window.parent.postMessage('home', '*');" style="color: #007AFF;">🏠</span>
+                <span class="nav-item">🏋️</span>
+                <span class="nav-item">🍎</span>
+                <span class="nav-item">📊</span>
+            </div>
+        """, unsafe_allow_html=True)
